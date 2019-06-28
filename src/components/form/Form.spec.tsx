@@ -1,11 +1,11 @@
 import * as React from 'react';
 import { render } from '@testing-library/react';
-import Form from './Form';
-import { IFormService, IFormModel } from '../../services/formService';
-import { container as ioc, injectable } from "inversify-hooks";
-import { Testing } from '../../utils';
 import { decorate } from 'inversify';
+import { container as ioc, injectable } from "inversify-hooks";
+import { Testing } from '../../tests/utils';
+import Form from './Form';
 import { Loading } from '../../components/loading';
+import { IFormService, IFormModel, SERVICE_NAME } from '../../services/formService';
 
 describe('Form with suspense & ioc features', () => {
     const saveDataMock = jest.fn();
@@ -23,7 +23,7 @@ describe('Form with suspense & ioc features', () => {
         }
 
         decorate(injectable(), FormServiceStub);
-        ioc.addSingleton<IFormService>(FormServiceStub, "FormService");
+        ioc.addSingleton<IFormService>(FormServiceStub, SERVICE_NAME);
     });
 
     it('Should render & loading username / firstname inputs', async () => {

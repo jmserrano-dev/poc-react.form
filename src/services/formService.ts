@@ -1,6 +1,8 @@
 import { Utils } from "../utils";
 import { injectable } from "inversify-props";
 
+export const SERVICE_NAME = "FormService";
+
 export interface IFormModel {
   userName: string;
   firstName: string;
