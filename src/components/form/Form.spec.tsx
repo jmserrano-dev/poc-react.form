@@ -59,7 +59,7 @@ describe('Form with suspense & ioc features', () => {
     it('Should send the form information when an input is changed', async () => {
         const userNameChanged = 'jmserrano';
 
-        const { container, debug } = render(
+        const { container } = render(
             <React.Suspense fallback={<Loading />}>
                 <Form />
             </React.Suspense>

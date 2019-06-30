@@ -1,10 +1,11 @@
-import React, { useEffect } from "react";
+import React from "react";
 import * as RFF from "react-final-form";
 import { Utils } from '../../utils';
 import { IFormModel, IFormService, SERVICE_NAME } from "../../services/formService";
 import { useService } from "inversify-hooks";
 import { useTranslation } from "react-i18next";
 import Styles from "./Styles";
+import useResource from '../../utils/useResource';
 
 const Form = () => {
   const { t } = useTranslation();
@@ -12,12 +13,10 @@ const Form = () => {
   const nameofService = Utils.nameofFactory<IFormService>();
   const formService = useService<IFormService>(SERVICE_NAME);
 
-  const resource = Utils.createResource<undefined, IFormModel>({name: nameofService("getData"), callback: () => formService.getData()})
-  const initialValues = resource.read(undefined);
-
-  useEffect(() => {
-    return Utils.cleanResource();
-  }, [])
+  const initialValues = useResource<IFormModel>({
+    identifier: nameofService("getData"),
+    callback: () => formService.getData()
+  });
   
   const onHandleSubmit = async (values: IFormModel) => {
     return formService.saveData(values);
