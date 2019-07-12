@@ -17,7 +17,7 @@ const Form = () => {
     identifier: nameofService("getData"),
     callback: () => formService.getData()
   });
-  
+
   const onHandleSubmit = async (values: IFormModel) => {
     return formService.saveData(values);
   };

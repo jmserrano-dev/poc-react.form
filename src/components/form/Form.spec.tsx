@@ -1,74 +1,81 @@
-import * as React from 'react';
-import { render } from '@testing-library/react';
-import { decorate } from 'inversify';
+import * as React from "react";
+import { decorate } from "inversify";
 import { container as ioc, injectable } from "inversify-hooks";
-import { Testing } from '../../tests/utils';
-import Form from './Form';
-import { Loading } from '../../components/loading';
-import { IFormService, IFormModel, SERVICE_NAME } from '../../services/formService';
+import Form from "./Form";
+import {
+  IFormService,
+  IFormModel,
+  SERVICE_NAME
+} from "../../services/formService";
+import { mount } from "enzyme";
+import { act } from "react-dom/test-utils";
+import { waitForElement } from "enzyme-async-helpers";
 
-describe('Form with suspense & ioc features', () => {
-    const saveDataMock = jest.fn();
-    const dataStub = {
-        userName: "SERRANO",
-        firstName: "José Manuel"
+jest.mock("../../utils/useResource", () => {
+  const useResource = ({
+    identifier,
+    callback
+  }: {
+    identifier: string;
+    callback: () => Promise<void>;
+  }) => {
+    return {
+      userName: "SERRANO",
+      firstName: "José Manuel"
     };
-    
-    beforeAll(() => {
-        class FormServiceStub implements IFormService {
-            public getData(): Promise<IFormModel> {
-                return Promise.resolve(dataStub);
-            };
-            public saveData = () => saveDataMock();
-        }
+  };
+  return useResource;
+});
 
-        decorate(injectable(), FormServiceStub);
-        ioc.addSingleton<IFormService>(FormServiceStub, SERVICE_NAME);
-    });
+describe("Form with suspense & ioc features", () => {
+  const dataStub = {
+    userName: "SERRANO",
+    firstName: "José Manuel"
+  };
+  const saveDataMock = jest.fn();
+  beforeAll(() => {
+    class FormServiceStub implements IFormService {
+      public getData(): Promise<IFormModel> {
+        return Promise.resolve(dataStub);
+      }
+      public saveData = () => saveDataMock();
+    }
 
-    it('Should render & loading username / firstname inputs', async () => {
-        const { container } = render(
-            <React.Suspense fallback={<Loading />}>
-                <Form />
-            </React.Suspense>
-        );
-        
-        const fallbackElementBefore = Testing.getFallbackElement(container);
-        const usernameInput = await Testing.getInputByName<IFormModel>("userName", container);
-        const firstNameInput = await Testing.getInputByName<IFormModel>("firstName", container);
-        const fallbackElementAfter = Testing.getFallbackElement(container);
+    decorate(injectable(), FormServiceStub);
+    ioc.addSingleton<IFormService>(FormServiceStub, SERVICE_NAME);
+  });
 
-        expect(fallbackElementBefore).not.toBeNull();
-        expect(fallbackElementAfter).toBeNull();
-        expect(usernameInput.value).toBe(dataStub.userName);
-        expect(firstNameInput.value).toBe(dataStub.firstName);
-    });
+  it("Should render & loading username / firstname inputs", async () => {
+    const form = mount(<Form />);
 
-    it('Should not send the form information if form hasnt been changed', async () => {
-        const { container } = render(
-            <React.Suspense fallback={<Loading />}>
-                <Form />
-            </React.Suspense>
-        );
+    const userNameInput = form.find(`input[name='userName']`);
+    const firstNameInput = form.find(`input[name='firstName']`);
 
-        await Testing.clickSubmitButton(container);
+    expect(userNameInput.props().value).toBe(dataStub.userName);
+    expect(firstNameInput.props().value).toBe(dataStub.firstName);
+  });
 
-        expect(saveDataMock).toHaveBeenCalledTimes(0);
-    });
+  it("Should not send the form information if form hasnt been changed", async () => {
+    const form = mount(<Form />);
 
-    it('Should send the form information when an input is changed', async () => {
-        const userNameChanged = 'jmserrano';
+    form.find(`button[type='submit']`).simulate("click");
 
-        const { container } = render(
-            <React.Suspense fallback={<Loading />}>
-                <Form />
-            </React.Suspense>
-        );
+    expect(saveDataMock).toHaveBeenCalledTimes(0);
+  });
 
-        const usernameInput = await Testing.changeInputByName<IFormModel>("userName", container, userNameChanged);
-        await Testing.clickSubmitButton(container);
+  it("Should send the form information when an input is changed", async () => {
+      const userNameChanged = "jmserrano";
 
-        expect(usernameInput.value).toBe(userNameChanged);
-        expect(saveDataMock).toHaveBeenCalledTimes(1);
-    });
+      const form = mount(<Form />);
+
+      form
+        .find(`input[name='userName']`)
+        .simulate("change", { target: { value: userNameChanged } });
+      const usernameInputChanged = form.find(`input[name='userName']`);
+
+      form.find(`button[type='submit']`).simulate("submit");
+
+      expect(usernameInputChanged.props().value).toBe(userNameChanged);
+      expect(saveDataMock).toHaveBeenCalledTimes(1);
+  });
 });
